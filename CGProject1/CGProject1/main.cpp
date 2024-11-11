@@ -77,6 +77,7 @@ bool isDrawing = false;
 bool isRotate = false;
 bool isAfterSpinning = false;
 bool movingRight = true;
+bool drawLine = false;
 GLfloat mouseX = 0.0f, mouseY = 0.0f;
 GLfloat ropeEndX = 0.0f, ropeEndY = 0.0f;
 GLfloat plusVelocityX = 0.02f;
@@ -558,10 +559,15 @@ void keyboard(unsigned char key, int x, int y) {
 			minusVelocityX += 0.01f;
 		}
 		break;
-	case 's':
+	case 'r':
+	case 'R':
 		isRotate = !isRotate;
 		break;
+	case 'l':
+	case 'L':
+		drawLine = !drawLine;
 	case 'q':
+	case 'Q':
 		exit(0);
 		break;
 	}
@@ -675,17 +681,18 @@ GLvoid drawScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
-	// 각 shape의 예상 이동 경로를 그리기
-	for (const auto& shape : shapes) {
-		if (!shape.pathVertices.empty()) {
-			glUniform3f(glGetUniformLocation(shaderProgramID, "color"), 0.5f, 0.5f, 0.5f);
+	// 예상선
+	if (drawLine) {
+		for (const auto& shape : shapes) {
+			if (!shape.pathVertices.empty()) {
+				glUniform3f(glGetUniformLocation(shaderProgramID, "color"), 0.5f, 0.5f, 0.5f);
 
-			// pathVBO를 이용해 경로 그리기
-			glBindBuffer(GL_ARRAY_BUFFER, shape.pathVbo);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
-			glEnableVertexAttribArray(0);
-			glDrawArrays(GL_LINE_STRIP, 0, shape.pathVertices.size() / 2);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
+				glBindBuffer(GL_ARRAY_BUFFER, shape.pathVbo);
+				glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+				glEnableVertexAttribArray(0);
+				glDrawArrays(GL_LINE_STRIP, 0, shape.pathVertices.size() / 2);
+				glBindBuffer(GL_ARRAY_BUFFER, 0);
+			}
 		}
 	}
 
@@ -696,18 +703,20 @@ GLvoid drawScene() {
 		glDrawArrays(GL_TRIANGLE_FAN, 0, shape.vertices.size() / 2);
 		glBindVertexArray(0);
 	}
+
 	// 바
 	glUniform3f(glGetUniformLocation(shaderProgramID, "color"), 1.0f, 0.0f, 0.0f);
 	updateBar();
 	glBindVertexArray(squareVao);
 	glDrawArrays(GL_QUADS, 0, 4);
 	glBindVertexArray(0);
+
 	// 절삭선 그리기
 	if (isDrawing) {
 		glUniform3f(glGetUniformLocation(shaderProgramID, "color"), 0.0f, 0.0f, 0.0f);
 		updateLine();
 		glBindVertexArray(vao);
-		glDrawArrays(GL_LINES, 0, 2); // 두 점을 잇는 선 그리기
+		glDrawArrays(GL_LINES, 0, 2);
 		glBindVertexArray(0);
 	}
 
